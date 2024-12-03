@@ -14,6 +14,17 @@ import (
 	"golang.org/x/term"
 )
 
+func generateKey(size int) ([]byte, error) {
+	if size != 16 && size != 24 && size != 32 {
+		return nil, fmt.Errorf("Invalid key size: %d bytes (must be 16, 24, or 32)", size)
+	}
+	key := make([]byte, size)
+	_, err := io.ReadFull(rand.Reader, key)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to generate key: %w", err)
+	}
+	return key, nil
+}
 func readFile(filename string, gcm cipher.AEAD) (string, error) {
 	ciphertext, err := os.ReadFile(filename)
 	if err != nil {
@@ -39,7 +50,7 @@ func main() {
 	readMode := false
 	if os.Args[1] == "--read" || os.Args[1] == "-r" {
 		if len(os.Args) < 3 {
-			fmt.Println("Error: Specify the filename to read.")
+			fmt.Println("Error: Specify the filename to read")
 			return
 		}
 		readMode = true
@@ -54,7 +65,7 @@ func main() {
 	invalidChars := []rune{'/', '\\', ':', '*', '?', '"', '<', '>', '|'}
 	for _, char := range filename {
 		if unicode.IsControl(char) || strings.ContainsRune(string(invalidChars), char) {
-			fmt.Println("Error: Filename contains invalid characters. Avoid using / \\ : * ? \" < > | and control characters.")
+			fmt.Println("Error: Filename contains invalid characters. Avoid using / \\ : * ? \" < > | and control characters")
 			return
 		}
 	}
