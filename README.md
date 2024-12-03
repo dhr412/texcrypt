@@ -19,7 +19,7 @@ Crypter allows the user to securely store data in a way that prevents exposure i
 
     ```bash
     git clone https://github.com/DCoder206/crypt-text.git
-    cd crypter
+    cd src
     ```
 
 2. Build the Go program.
