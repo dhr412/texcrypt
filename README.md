@@ -29,3 +29,27 @@ Crypter allows the user to securely store data in a way that prevents exposure i
     ```
 
 3. The program is now ready to use.
+
+## Usage
+
+### Encrypting a file
+1. **Run the program** with the file name and provide a passphrase (e.g., `securepassphrase`):
+   
+   ```bash
+    ./crypter myfile
+   ```
+
+2. The program will generate an AES key, encrypt the file contents, and store the key encrypted alongside the file.
+
+3. You will be prompted with a simple text editor to modify the content interactively. Press **Ctrl+Q** to save and exit.
+
+### Decrypting a File
+1. **Run the program in read mode** and provide the passphrase used during encryption:
+   
+    ```bash
+    ./crypter --read myfile
+    ```
+
+2. The program will extract and decrypt the AES key from the file using the provided passphrase and then decrypt the file contents.
+
+3. The decrypted contents of the file will be displayed
