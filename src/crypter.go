@@ -4,31 +4,61 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"unicode"
 
+	"golang.org/x/crypto/pbkdf2"
 	"golang.org/x/term"
 )
 
-func generateKey(size int) ([]byte, error) {
-	if size != 16 && size != 24 && size != 32 {
-		return nil, fmt.Errorf("Invalid key size: %d bytes (must be 16, 24, or 32)", size)
+func generateSalt(size int) ([]byte, error) {
+	if size <= 0 {
+		return nil, fmt.Errorf("Invalid salt size: must be greater than 0")
 	}
-	key := make([]byte, size)
-	_, err := io.ReadFull(rand.Reader, key)
+	salt := make([]byte, size)
+	_, err := rand.Read(salt)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to generate key: %w", err)
+		return nil, fmt.Errorf("Error generating salt: %w", err)
 	}
-	return key, nil
+	return salt, nil
 }
-func readFile(filename string, gcm cipher.AEAD) (string, error) {
-	ciphertext, err := os.ReadFile(filename)
+func generateEncKey(passphrase, salt []byte, keySize int) ([]byte, error) {
+	if len(salt) == 0 {
+		return nil, fmt.Errorf("Salt is required for key derivation")
+	}
+	return pbkdf2.Key(passphrase, salt, 10000, keySize, sha256.New), nil
+}
+func readFile(filename, passphrase string, saltSize int) (string, error) {
+	data, err := os.ReadFile(filename)
 	if err != nil {
+		if os.IsNotExist(err) || len(data) == 0 {
+			return "", nil
+		}
 		return "", fmt.Errorf("Error reading file: %w", err)
+	}
+	if len(data) < saltSize {
+		fmt.Println("File too small to be encrypted")
+		return "", nil
+	}
+	salt, ciphertext := data[:saltSize], data[saltSize:]
+	key, err := generateEncKey([]byte(passphrase), salt, 32)
+	if err != nil {
+		return "", fmt.Errorf("Error deriving key: %w", err)
+	}
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", fmt.Errorf("Error creating cipher: %w", err)
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", fmt.Errorf("Error creating GCM: %w", err)
 	}
 	nonceSize := gcm.NonceSize()
 	if len(ciphertext) < nonceSize {
@@ -40,6 +70,16 @@ func readFile(filename string, gcm cipher.AEAD) (string, error) {
 		return "", fmt.Errorf("Error decrypting file: %w", err)
 	}
 	return string(plaintext), nil
+}
+func clearScrn() {
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", "cls")
+	} else {
+		cmd = exec.Command("clear")
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Run()
 }
 func main() {
 	if len(os.Args) < 2 {
@@ -69,7 +109,22 @@ func main() {
 			return
 		}
 	}
-	key := []byte("examplekey123456examplekey123456") // Replace with secure key generation
+	fmt.Print("Enter passphrase: ")
+	passphr, err := term.ReadPassword(int(os.Stdin.Fd()))
+	if err != nil {
+		fmt.Println("Error reading passphrase:", err)
+		return
+	}
+	fmt.Println()
+	salt, err := generateSalt(32)
+	if err != nil {
+		fmt.Println("Error generating salt:", err)
+	}
+	key, err := generateEncKey([]byte(passphr), salt, 32)
+	if err != nil {
+		fmt.Println("Error deriving key:", err)
+		return
+	}
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		fmt.Println("Error creating cipher:", err)
@@ -81,8 +136,8 @@ func main() {
 		return
 	}
 	if readMode {
-		fmt.Print("\033[2J\033[H")
-		cont, err := readFile(filename, gcm)
+		clearScrn()
+		cont, err := readFile(filename, string(passphr), 32)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -92,11 +147,13 @@ func main() {
 	}
 	var ogcont string
 	if _, err := os.Stat(filename); err == nil {
-		ogcont, err = readFile(filename, gcm)
+		ogcont, err = readFile(filename, string(passphr), 32)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
+	} else {
+		fmt.Println("Creating a new file...")
 	}
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
@@ -104,12 +161,12 @@ func main() {
 		return
 	}
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
-	fmt.Print("\033[2J\033[H")
+	clearScrn()
 	var textBuffer strings.Builder
 	if ogcont != "" {
 		textBuffer.WriteString(ogcont)
 	}
-	fmt.Println("Simple Text Editor (Press Ctrl+Q to save and exit)")
+	fmt.Println("Text Editor (Press Ctrl+Q to save and exit)")
 	fmt.Println("-------------------------------------------------")
 	fmt.Print(textBuffer.String())
 	for {
@@ -120,7 +177,7 @@ func main() {
 			return
 		}
 		if buf[0] == 17 {
-			fmt.Print("\033[2J\033[H")
+			clearScrn()
 			break
 		}
 		if buf[0] == 8 {
@@ -150,14 +207,24 @@ func main() {
 		textBuffer.WriteByte(buf[0])
 		fmt.Print(string(buf[0]))
 	}
+	if textBuffer.Len() == 0 {
+		fmt.Println("No changes made. File remains unaltered.")
+		return
+	}
 	plaintext := []byte(textBuffer.String())
+	if len(plaintext) == 0 {
+		fmt.Println("No content to save. File will remain empty.")
+		return
+	}
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
 		fmt.Println("Error generating nonce:", err)
 		return
 	}
 	ciphertext := gcm.Seal(nonce, nonce, plaintext, nil)
-	err = os.WriteFile(filename, ciphertext, 0644)
+	metaData := append(salt, nonce...)
+	finalData := append(metaData, ciphertext...)
+	err = os.WriteFile(filename, finalData, 0644)
 	if err != nil {
 		fmt.Println("Error writing to file:", err)
 		return
