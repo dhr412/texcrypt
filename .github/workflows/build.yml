@@ -1,0 +1,42 @@
+name: Build binary
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Release version (e.g., v2.0.0)"
+        required: true
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "stable"
+
+      - name: Build Go file
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            go build -o texcrypt.exe src/texcrypt.go
+            mv texcrypt.exe texcrypt-win.exe
+          else
+            go build -o texcrypt src/texcrypt.go
+            mv texcrypt texcrypt-linux
+          fi
+        shell: bash
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ runner.os }}-${{ github.event.inputs.release_version }}
+          path: |
+            texcrypt-*
