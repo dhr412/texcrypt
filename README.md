@@ -1,4 +1,4 @@
-TexCrypt
+# TexCrypt
 
 `TexCrypt` is a lightweight, secure, and user-friendly CLI tool built in Go for encrypting and decrypting text-based files using AES-256-GCM. Designed with simplicity and data confidentiality in mind, TexCrypt ensures that sensitive file contents can be safely encrypted using strong passwords and modern cryptographic standards.
 
