@@ -37,7 +37,7 @@ func generateEncKey(passphrase, salt []byte, keySize int) ([]byte, error) {
 func encryptFile(filePath string, password []byte) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return fmt.Errorf("could not read file: %w", err)
+		return fmt.Errorf("Could not read file: %w", err)
 	}
 
 	salt, err := generateSalt(32)
@@ -68,17 +68,17 @@ func encryptFile(filePath string, password []byte) error {
 	ciphertext := gcm.Seal(nil, nonce, data, nil)
 	finalData := append(salt, append(nonce, ciphertext...)...)
 
-	outFile := strings.TrimSuffix(filePath, filepath.Ext(filePath)) + ".encrypt"
+	outFile := strings.TrimSuffix(filePath, filepath.Ext(filePath)) + ".texcrypted"
 	return os.WriteFile(outFile, finalData, 0644)
 }
 
 func decryptFile(filePath string, password []byte) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return fmt.Errorf("could not read file: %w", err)
+		return fmt.Errorf("Could not read file: %w", err)
 	}
 	if len(data) < 32 {
-		return fmt.Errorf("invalid encrypted file")
+		return fmt.Errorf("Invalid encrypted file")
 	}
 
 	salt := data[:32]
@@ -99,7 +99,7 @@ func decryptFile(filePath string, password []byte) error {
 
 	nonceSize := gcm.NonceSize()
 	if len(data) < 32+nonceSize {
-		return fmt.Errorf("invalid encrypted content")
+		return fmt.Errorf("Invalid encrypted content")
 	}
 
 	nonce := data[32 : 32+nonceSize]
@@ -107,22 +107,22 @@ func decryptFile(filePath string, password []byte) error {
 
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		return fmt.Errorf("decryption failed: %w", err)
+		return fmt.Errorf("Decryption failed: %w", err)
 	}
 
-	outFile := strings.TrimSuffix(filePath, ".encrypt") + "_decrypted.txt"
+	outFile := strings.TrimSuffix(filePath, ".texcrypted") + "_decrypted.txt"
 	return os.WriteFile(outFile, plaintext, 0644)
 }
 
 func main() {
 	encryptPath := flag.String("encrypt", "", "Encrypt the specified .txt or .md file")
-	decryptPath := flag.String("decrypt", "", "Decrypt the specified .encrypt file")
+	decryptPath := flag.String("decrypt", "", "Decrypt the specified .texcrypted file")
 	helpFlag := flag.Bool("help", false, "Show usage information")
 
 	flag.Usage = func() {
 		fmt.Println("Usage:")
 		fmt.Println("  --encrypt=<filename.txt|filename.md>")
-		fmt.Println("  --decrypt=<filename.encrypt>")
+		fmt.Println("  --decrypt=<filename.texcrypted>")
 		fmt.Println("Options:")
 		flag.PrintDefaults()
 	}
@@ -166,8 +166,8 @@ func main() {
 	}
 
 	if *decryptPath != "" {
-		if filepath.Ext(*decryptPath) != ".encrypt" {
-			fmt.Println("Error: Only files with .encrypt extension can be decrypted.")
+		if filepath.Ext(*decryptPath) != ".texcrypted" {
+			fmt.Println("Error: Only files with .texcrypted extension can be decrypted.")
 			return
 		}
 

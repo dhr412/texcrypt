@@ -1,4 +1,4 @@
-module crypt-text
+module texcrypt
 
 go 1.23.0
 
