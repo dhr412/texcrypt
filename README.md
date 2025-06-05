@@ -12,7 +12,7 @@ Whether you're storing personal notes, passwords, or secrets, `TexCrypt` provide
 * **Password-Based Encryption** – Uses Argon2id to derive secure keys from passwords.
 * **Salt + Nonce Randomization** – Each encryption operation uses unique salt and nonce values.
 * **Simple CLI Interface** – Easy to use with only a couple of flags.
-* **Secure File Output** – Encrypted output stored as `.encrypt`; decrypted output written as `_decrypted.txt`.
+* **Secure File Output** – Encrypted output stored as `.texcrypted`; decrypted output written as `<filename>_decrypted.txt`.
 * **Safe Password Entry** – Prompts for password without echoing to the terminal.
 
 ---
@@ -57,10 +57,10 @@ texcrypt --encrypt=<file> | --decrypt=<file> [--help]
 ### Flags
 
 * `--encrypt=<file>` – Encrypt a `.txt` or `.md` file using a password.
-* `--decrypt=<file>` – Decrypt a `.encrypt` file using the original password.
+* `--decrypt=<file>` – Decrypt a `.texcrypted` file using the original password.
 * `--help` – Show usage instructions.
 
-> Only `.txt` and `.md` files are allowed for encryption. Only `.encrypt` files are valid for decryption.
+> Only `.txt` and `.md` files are allowed for encryption. Only `.texcrypted` files are valid for decryption.
 
 ---
 
@@ -73,12 +73,12 @@ texcrypt --encrypt=secrets.txt
 ```
 
 * Prompts for password and confirmation.
-* Outputs: `secrets.encrypt`
+* Outputs: `secrets.texcrypted`
 
 #### Decrypting a File
 
 ```bash
-texcrypt --decrypt=secrets.encrypt
+texcrypt --decrypt=secrets.texcrypted
 ```
 
 * Prompts for the same password used to encrypt.
@@ -99,7 +99,7 @@ texcrypt --decrypt=secrets.encrypt
    * Generates 32-byte random salt and nonce.
    * Derives a 256-bit AES key using Argon2id.
    * Encrypts file content using AES-GCM.
-   * Writes `[salt][nonce][ciphertext]` to a `.encrypt` file.
+   * Writes `[salt][nonce][ciphertext]` to a `.texcrypted` file.
 
 3. **Decryption**:
 
