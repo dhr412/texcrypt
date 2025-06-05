@@ -4,7 +4,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"crypto/sha256"
 	"flag"
 	"fmt"
 	"io"
@@ -12,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"golang.org/x/crypto/pbkdf2"
+	"golang.org/x/crypto/argon2"
 	"golang.org/x/term"
 )
 
@@ -32,7 +31,7 @@ func generateEncKey(passphrase, salt []byte, keySize int) ([]byte, error) {
 	if len(salt) == 0 {
 		return nil, fmt.Errorf("Salt is required for key derivation")
 	}
-	return pbkdf2.Key(passphrase, salt, 32768, keySize, sha256.New), nil
+	return argon2.IDKey(passphrase, salt, 2, 32*1024, 2, uint32(keySize)), nil
 }
 
 func encryptFile(filePath string, password []byte) error {
