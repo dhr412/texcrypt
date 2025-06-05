@@ -32,7 +32,7 @@ func generateEncKey(passphrase, salt []byte, keySize int) ([]byte, error) {
 	if len(salt) == 0 {
 		return nil, fmt.Errorf("Salt is required for key derivation")
 	}
-	return pbkdf2.Key(passphrase, salt, 10000, keySize, sha256.New), nil
+	return pbkdf2.Key(passphrase, salt, 32768, keySize, sha256.New), nil
 }
 
 func encryptFile(filePath string, password []byte) error {
