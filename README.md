@@ -97,7 +97,7 @@ texcrypt --decrypt=secrets.encrypt
 
    * Prompts for password twice (with hidden input).
    * Generates 32-byte random salt and nonce.
-   * Derives a 256-bit AES key using PBKDF2 (10000 iterations).
+   * Derives a 256-bit AES key using PBKDF2.
    * Encrypts file content using AES-GCM.
    * Writes `[salt][nonce][ciphertext]` to a `.encrypt` file.
 
