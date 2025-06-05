@@ -2,14 +2,14 @@
 
 `TexCrypt` is a lightweight, secure, and user-friendly CLI tool built in Go for encrypting and decrypting text-based files using AES-256-GCM. Designed with simplicity and data confidentiality in mind, TexCrypt ensures that sensitive file contents can be safely encrypted using strong passwords and modern cryptographic standards.
 
-Whether you're storing personal notes, secure configuration, or secrets, `TexCrypt` provides a seamless way to lock down your data with minimal friction.
+Whether you're storing personal notes, passwords, or secrets, `TexCrypt` provides a seamless way to lock down your data with minimal friction.
 
 ---
 
 ## Features
 
 * **AES-256-GCM Encryption** – Provides both confidentiality and integrity.
-* **Password-Based Encryption** – Uses PBKDF2 + SHA-256 to derive secure keys from passwords.
+* **Password-Based Encryption** – Uses Argon2id to derive secure keys from passwords.
 * **Salt + Nonce Randomization** – Each encryption operation uses unique salt and nonce values.
 * **Simple CLI Interface** – Easy to use with only a couple of flags.
 * **Secure File Output** – Encrypted output stored as `.encrypt`; decrypted output written as `_decrypted.txt`.
@@ -97,7 +97,7 @@ texcrypt --decrypt=secrets.encrypt
 
    * Prompts for password twice (with hidden input).
    * Generates 32-byte random salt and nonce.
-   * Derives a 256-bit AES key using PBKDF2.
+   * Derives a 256-bit AES key using Argon2id.
    * Encrypts file content using AES-GCM.
    * Writes `[salt][nonce][ciphertext]` to a `.encrypt` file.
 
@@ -105,14 +105,14 @@ texcrypt --decrypt=secrets.encrypt
 
    * Prompts for password (once).
    * Extracts salt and nonce from the file.
-   * Re-derives the key using PBKDF2.
+   * Re-derives the key using Argon2.
    * Decrypts the data and writes plaintext to `<original>_decrypted.txt`.
 
 4. **Security Measures**:
 
    * Password input is hidden.
    * AES-GCM provides both encryption and authentication.
-   * Key derivation is hardened using salt and PBKDF2.
+   * Key derivation is hardened using salt and Argon2.
 
 ---
 
